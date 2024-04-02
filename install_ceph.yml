@@ -1,0 +1,38 @@
+---
+- name: Install ceph on nodes
+  hosts: CephNodes
+  tasks:
+    - name: Install Pyton and Podman
+      ansible.builtin.yum:
+        name:
+          - python39
+          - podman
+          - curl
+          - chrony
+      tags: [python, podman]
+    - name: Enable Service Chronyd Service
+      ansible.builtin.systemd:
+        name: chronyd.service
+        enabled: true
+        masked: no
+      tags: [chrony]
+    - name: Reload Chronyd Service
+      ansible.builtin.systemd:
+        name: chronyd.service
+        state: restarted
+      become: yes
+      tags: [chrony]
+    - name: Download Cephadm and set +x
+      ansible.builtin.uri:
+        url: https://github.com/ceph/ceph/raw/quincy/src/cephadm/cephadm
+        dest: ~/cephadm
+        mode: +x
+      tags: [cephadm]
+    - name: Add Ceph Repositores via cephadm
+      ansible.builtin.shell:
+        cmd: ./cephadm add-repo --release quincy
+      tags: [cephadm]
+    - name: Install Ceph via cephadm
+      ansible.builtin.shell:
+        cmd: ./cephadm install
+      tags: [cephadm]
